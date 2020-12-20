@@ -12,8 +12,8 @@
         </span>
         <el-input
           ref="username"
-          v-model="loginForm.username"
-          placeholder="Username"
+          v-model="params.mobile"
+          placeholder="用户名"
           name="username"
           type="text"
           tabindex="1"
@@ -28,9 +28,9 @@
         <el-input
           :key="passwordType"
           ref="password"
-          v-model="loginForm.password"
+          v-model="params.verificationCode"
           :type="passwordType"
-          placeholder="Password"
+          placeholder="密码"
           name="password"
           tabindex="2"
           auto-complete="on"
@@ -43,10 +43,10 @@
 
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
 
-      <div class="tips">
+      <!-- <div class="tips">
         <span style="margin-right:20px;">username: admin</span>
         <span> password: any</span>
-      </div>
+      </div> -->
 
     </el-form>
   </div>
@@ -77,6 +77,10 @@ export default {
         username: 'admin',
         password: '111111'
       },
+      params: {
+        mobile: '18344444444', // 手机号
+        verificationCode: '666666' // 验证码
+      },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
         password: [{ required: true, trigger: 'blur', validator: validatePassword }]
@@ -106,17 +110,43 @@ export default {
       })
     },
     handleLogin() {
+      let data= {
+        mobile: this.params.mobile, // 手机号
+        smsCode: '123456' // 验证码
+      }
+      let url = '/bhfair/wap/login'
+      // let url = '/mobile/user/login'
       this.$refs.loginForm.validate(valid => {
         if (valid) {
-          this.loading = true
-          this.$store.dispatch('user/login', this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || '/' })
-            this.loading = false
-          }).catch(() => {
-            this.loading = false
-          })
+      this.$post({
+        url,
+        data,
+        headers:{'Content-Type':'application/x-www-form-urlencoded'}
+      }).then(res => {
+        let { token } = res.datas
+        this.$store.commit('user/setToken',token)
+        this.$store.commit('user/setUserInfo',res.datas)
+        console.log(res.datas,this.$store);
+        this.$message({
+          message: '登录成功',
+          type: 'success'
+        });
+        console.log(this.redirect)
+        if (this.redirect) {
+              this.$router.replace({
+                path: this.redirect
+              })
+            } else {
+              this.$router.replace({
+                path: '/'
+              }) 
+            }
+      })
         } else {
-          console.log('error submit!!')
+          this.$message({
+          message: '登录失败',
+          type: 'error'
+        });
           return false
         }
       })

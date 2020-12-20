@@ -4,15 +4,26 @@ import { resetRouter } from '@/router'
 
 const getDefaultState = () => {
   return {
-    token: getToken(),
+    token: '',
     name: '',
-    avatar: ''
+    avatar: '',
+    userInfo:null,
+    openId:'',
   }
 }
 
 const state = getDefaultState()
 
 const mutations = {
+  setToken(state,value){
+    state.token = value
+  },
+  setUserInfo(state,value){
+    state.userInfo = value
+  },
+  setOpenId(state,value){
+    state.openId = value
+  },
   RESET_STATE: (state) => {
     Object.assign(state, getDefaultState())
   },
@@ -45,23 +56,23 @@ const actions = {
 
   // get user info
   getInfo({ commit, state }) {
-    return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
-        const { data } = response
+    // return new Promise((resolve, reject) => {
+    //   getInfo(state.token).then(response => {
+    //     const { data } = response
 
-        if (!data) {
-          return reject('Verification failed, please Login again.')
-        }
+    //     if (!data) {
+    //       return reject('Verification failed, please Login again.')
+    //     }
 
-        const { name, avatar } = data
+    //     const { name, avatar } = data
 
-        commit('SET_NAME', name)
-        commit('SET_AVATAR', avatar)
-        resolve(data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+    //     commit('SET_NAME', name)
+    //     commit('SET_AVATAR', avatar)
+    //     resolve(data)
+    //   }).catch(error => {
+    //     reject(error)
+    //   })
+    // })
   },
 
   // user logout
@@ -80,11 +91,11 @@ const actions = {
 
   // remove token
   resetToken({ commit }) {
-    return new Promise(resolve => {
-      removeToken() // must remove  token  first
-      commit('RESET_STATE')
-      resolve()
-    })
+    // return new Promise(resolve => {
+    //   removeToken() // must remove  token  first
+    //   commit('RESET_STATE')
+    //   resolve()
+    // })
   }
 }
 

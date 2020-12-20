@@ -1,25 +1,27 @@
+import Vue from 'vue'
 import axios from 'axios'
 import { MessageBox, Message } from 'element-ui'
 import store from '@/store'
-import { getToken } from '@/utils/auth'
+import Qs from 'qs'
+
+import { getToken ,getStorage, clearStorage} from '@/utils/auth'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
-  // withCredentials: true, // send cookies when cross-domain requests
-  timeout: 5000 // request timeout
+  timeout: 60000 ,// request timeout
+  headers: { 'X-Requested-With': 'XMLHttpRequest', channel: 3 }
 })
 
 // request interceptor
 service.interceptors.request.use(
   config => {
-    // do something before request is sent
 
     if (store.getters.token) {
-      // let each request carry token
-      // ['X-Token'] is a custom headers key
-      // please modify it according to the actual situation
       config.headers['X-Token'] = getToken()
+      config.headers['authorization'] = store.getters.token
+    }
+    if (config.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+      config.data = Qs.stringify(config.data)
     }
     return config
   },
@@ -31,55 +33,110 @@ service.interceptors.request.use(
 )
 
 // response interceptor
-service.interceptors.response.use(
-  /**
-   * If you want to get http information such as headers or status
-   * Please return  response => response
-  */
-
-  /**
-   * Determine the request status by custom code
-   * Here is just an example
-   * You can also judge the status by HTTP Status Code
-   */
-  response => {
-    const res = response.data
-
-    // if the custom code is not 20000, it is judged as an error.
-    if (res.code !== 20000) {
-      Message({
-        message: res.message || 'Error',
-        type: 'error',
-        duration: 5 * 1000
+service.interceptors.response.use(res=>{
+  let {msg,code}=res.data || res
+  if(code == 1100){
+      Message.error('token失效,请重新登录')
+      store.commit('setToken','')
+      store.commit('setUserInfo',null)
+      router.replace({
+          path:'/login',
+          query:{
+              replace:router.currentRoute.fullPath
+          }
       })
-
-      // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
-      if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
-        // to re-login
-        MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-          confirmButtonText: 'Re-Login',
-          cancelButtonText: 'Cancel',
-          type: 'warning'
-        }).then(() => {
-          store.dispatch('user/resetToken').then(() => {
-            location.reload()
+      return;
+  }else if(code!=0&&code!=200){
+      if(code==999){
+        store.commit('setToken','')
+        store.commit('setUserInfo',null)
+          router.replace({
+              path:'/login',
+              query:{
+                  replace:router.currentRoute.fullPath
+              }
           })
-        })
+        }
+      Message.error('code:'+code,msg)
+  }else{
+      return res;
+  }
+
+}, (err) =>{
+  // 对返回的错误进行一些处理
+if (err && err.response) {
+  let { status, data } = err.response
+  if(data.code=='1001'){
+    store.commit('setToken','')
+    store.commit('setUserInfo',null)
+    router.replace({
+      path: '/login',
+      query: {
+        redirect: router.currentRoute.fullPath
       }
-      return Promise.reject(new Error(res.message || 'Error'))
-    } else {
-      return res
-    }
-  },
-  error => {
-    console.log('err' + error) // for debug
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
     })
-    return Promise.reject(error)
+    Message({
+      message: '请登录',
+      type: 'error'
+    })
+  }
+  switch (status) {
+    case 400:
+      err.message = '请求错误'
+      break
+    case 40000:
+      err.message = '未授权，请登录'
+      break
+    case 403:
+      err.message = '拒绝访问'
+      break
+    case 404:
+      err.message = `请求地址出错: ${err.response.config.url}`
+      break
+    case 408:
+      err.message = '请求超时'
+      break
+    case 500:
+      err.message = '服务器内部错误'
+      break
+    case 501:
+      err.message = '服务未实现'
+      break
+    case 502:
+      err.message = '网关错误'
+      break
+    case 503:
+      err.message = '服务不可用'
+      break
+    case 504:
+      err.message = '网关超时'
+      break
+    case 505:
+      err.message = 'HTTP版本不受支持'
+      break
+    default:
+  }
+}
+return Promise.reject(err)
   }
 )
-
-export default service
+const handle =async (option)=>{
+  let res = await service({
+      method: option.method,
+      url: option.url,
+      data: option.data || {},
+      params:option.params ||{},
+      headers: option.headers || {}
+  })
+  return res && res.data ? res.data : res
+}
+Vue.prototype.$get=async option=>{
+  option.method='get'
+  let res = await handle(option)
+  return res
+}
+Vue.prototype.$post=async option=>{
+  option.method='post'
+  let res = await handle(option)
+  return res
+}

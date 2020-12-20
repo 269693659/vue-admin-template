@@ -3,6 +3,7 @@
     <logo v-if="showLogo" :collapse="isCollapse" />
     <el-scrollbar wrap-class="scrollbar-wrapper">
       <el-menu
+        @select="handleSelect"
         :default-active="activeMenu"
         :collapse="isCollapse"
         :background-color="variables.menuBg"
@@ -31,6 +32,7 @@ export default {
       'sidebar'
     ]),
     routes() {
+      console.log(this.$router);
       return this.$router.options.routes
     },
     activeMenu() {
@@ -51,6 +53,14 @@ export default {
     isCollapse() {
       return !this.sidebar.opened
     }
+  },
+  methods:{
+    handleSelect(key, keyPath) {
+      // let val = keyPath.join('/')
+      console.log(key, keyPath);
+      this.$router.push(key)
+    }
   }
+  
 }
 </script>

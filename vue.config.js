@@ -32,11 +32,23 @@ module.exports = {
   devServer: {
     port: port,
     open: true,
-    overlay: {
-      warnings: false,
-      errors: true
-    },
-    before: require('./mock/mock-server.js')
+    // overlay: {
+    //   warnings: false,
+    //   errors: true
+    // },
+    proxy: {
+      '/mobile': {
+        target: 'http://gatewaytest.ibhforum.com', 
+        ws: true,
+        changOrigin: true, // 允许跨域
+      },
+      '/bhfair': {
+        target: 'https://kmjstest.amyun.cn/', 
+        ws: true,
+        changOrigin: true, 
+      }
+    }
+    // before: require('./mock/mock-server.js')
   },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that
