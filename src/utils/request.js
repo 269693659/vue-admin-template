@@ -4,8 +4,6 @@ import { MessageBox, Message } from 'element-ui'
 import store from '@/store'
 import Qs from 'qs'
 
-import { getToken ,getStorage, clearStorage} from '@/utils/auth'
-
 // create an axios instance
 const service = axios.create({
   timeout: 60000 ,// request timeout
@@ -17,7 +15,6 @@ service.interceptors.request.use(
   config => {
 
     if (store.getters.token) {
-      config.headers['X-Token'] = getToken()
       config.headers['authorization'] = store.getters.token
     }
     if (config.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
@@ -59,7 +56,7 @@ service.interceptors.response.use(res=>{
         }
       Message.error('code:'+code,msg)
   }else{
-      return res;
+      return res.data?res.data:res;
   }
 
 }, (err) =>{
@@ -120,23 +117,4 @@ if (err && err.response) {
 return Promise.reject(err)
   }
 )
-const handle =async (option)=>{
-  let res = await service({
-      method: option.method,
-      url: option.url,
-      data: option.data || {},
-      params:option.params ||{},
-      headers: option.headers || {}
-  })
-  return res && res.data ? res.data : res
-}
-Vue.prototype.$get=async option=>{
-  option.method='get'
-  let res = await handle(option)
-  return res
-}
-Vue.prototype.$post=async option=>{
-  option.method='post'
-  let res = await handle(option)
-  return res
-}
+export default service

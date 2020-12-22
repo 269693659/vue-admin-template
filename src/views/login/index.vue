@@ -8,7 +8,7 @@
 
       <el-form-item prop="username">
         <span class="svg-container">
-          <svg-icon icon-class="user" />
+          <i class="el-icon-user-solid"></i>
         </span>
         <el-input
           ref="username"
@@ -23,7 +23,7 @@
 
       <el-form-item prop="password">
         <span class="svg-container">
-          <svg-icon icon-class="password" />
+          <i class="el-icon-lock"></i>
         </span>
         <el-input
           :key="passwordType"
@@ -37,7 +37,7 @@
           @keyup.enter.native="handleLogin"
         />
         <span class="show-pwd" @click="showPwd">
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+          <!-- <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" /> -->
         </span>
       </el-form-item>
 
@@ -54,7 +54,6 @@
 
 <script>
 import { validUsername } from '@/utils/validate'
-
 export default {
   name: 'Login',
   data() {
@@ -90,6 +89,8 @@ export default {
       redirect: undefined
     }
   },
+  computed:{
+  },
   watch: {
     $route: {
       handler: function(route) {
@@ -111,44 +112,28 @@ export default {
     },
     handleLogin() {
       let data= {
-        mobile: this.params.mobile, // 手机号
+        mobile: this.params.mobile.trim(), // 手机号
         smsCode: '123456' // 验证码
       }
-      let url = '/bhfair/wap/login'
-      // let url = '/mobile/user/login'
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-      this.$post({
-        url,
-        data,
-        headers:{'Content-Type':'application/x-www-form-urlencoded'}
-      }).then(res => {
-        let { token } = res.datas
-        this.$store.commit('user/setToken',token)
-        this.$store.commit('user/setUserInfo',res.datas)
-        console.log(res.datas,this.$store);
+      this.$store.dispatch('user/login',data).then(res=>{
         this.$message({
           message: '登录成功',
           type: 'success'
         });
-        console.log(this.redirect)
         if (this.redirect) {
-              this.$router.replace({
-                path: this.redirect
-              })
-            } else {
-              this.$router.replace({
-                path: '/'
-              }) 
-            }
-      })
+          this.$router.replace({
+            path: this.redirect
+          })
         } else {
-          this.$message({
+          this.$router.replace({
+            path: '/'
+          }) 
+        }
+      }).catch(err=>{
+        this.$message({
           message: '登录失败',
           type: 'error'
         });
-          return false
-        }
       })
     }
   }

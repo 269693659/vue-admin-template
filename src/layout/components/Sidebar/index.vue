@@ -24,6 +24,7 @@ import { mapGetters } from 'vuex'
 import Logo from './Logo'
 import SidebarItem from './SidebarItem'
 import variables from '@/styles/variables.scss'
+import { isExternal } from '@/utils/validate'
 
 export default {
   components: { SidebarItem, Logo },
@@ -45,7 +46,7 @@ export default {
       return path
     },
     showLogo() {
-      return this.$store.state.settings.sidebarLogo
+      // return this.$store.state.settings.sidebarLogo
     },
     variables() {
       return variables
@@ -54,11 +55,16 @@ export default {
       return !this.sidebar.opened
     }
   },
+  created(){},
   methods:{
     handleSelect(key, keyPath) {
       // let val = keyPath.join('/')
-      console.log(key, keyPath);
-      this.$router.push(key)
+      // console.log(isExternal(key),key, keyPath);
+      if(isExternal(key)){
+        location.href=key
+      }else{
+        this.$router.push(key)
+      }
     }
   }
   
